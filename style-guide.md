@@ -4,17 +4,17 @@
 
 As a rule, all code should be written in Python3 >= 3.8
 
-Other languages is acceptable if it can be argued that not using Python will make the code easier to implement and/or maintain. The reason for chosing something other than Python must be OK with the project lead and documented.
+Other languages are acceptable if it can be argued that not using Python will make the code easier to implement and/or maintain. The reason for chosing something other than Python must be OK with the project lead and documented.
 
 ## Header
 
-All code must be contain a header with the name and email of the developers of
-the code (more than one contributer, more than one name  ) All code must be
+All code must contain a header with the name and email of the developers of
+the code (more than one contributer, more than one name)
 
 ## Version Control
 
-under version control
-default version control is Git
+1. All code must be under version control.
+2. The version control used is Git.
 
 ## Code style
 
@@ -22,7 +22,7 @@ This section outlines code styles that should be followed for various languages.
 
 Python
 
-All code should PEP8 and generally splitting code up into multiple small functions is highly recommended.
+All code should conform PEP8 and generally splitting code up into multiple small functions is highly recommended.
 
 We are using
 

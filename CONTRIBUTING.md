@@ -1,6 +1,6 @@
 # CyberRisk contributing guide <!-- omit in toc -->
 
-The CyberRisk repository is, in generall, only intended for the CyberRisk project partners to contribute code to the project. However, any contributions will be considered and merged if it is usefull to the project.
+The CyberRisk repository is, in general, only intended for the CyberRisk project partners to contribute code to the project. However, any contributions will be considered and merged if it is useful to the project.
 
 ## New contributor guide
 
@@ -53,4 +53,4 @@ Once you submit your PR, a Docs team member will review your proposal. We may as
 
 ## License
 
-As pr. the [Github terms-of-service](https://github.com/github/site-policy/blob/1263bf0164cfe60d0900e70ba9126855c7c23c6c/Policies/github-terms-of-service.md#6-contributions-under-repository-license) any code contributed to the projects is licensed under the [LICENSE](LICENSE) if the main repository.
+As pr. the [Github terms-of-service](https://github.com/github/site-policy/blob/1263bf0164cfe60d0900e70ba9126855c7c23c6c/Policies/github-terms-of-service.md#6-contributions-under-repository-license) any code contributed to the projects is licensed under the [LICENSE](LICENSE) of the main repository.
