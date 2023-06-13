@@ -7,7 +7,7 @@
   "criticality": "non-critical",
   "policyExceptions": [
     {
-      "requirement": "mandatoryPR"
+      "requirement": "jiraReference"
     }
   ]
 }
