@@ -22,7 +22,7 @@ This section outlines code styles that should be followed for various languages.
 
 Python
 
-All code should conform PEP8 and generally splitting code up into multiple small functions is highly recommended.
+All code should conform to PEP8 and generally splitting code up into multiple small functions is highly recommended.
 
 We are using
 
