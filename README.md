@@ -12,6 +12,12 @@ The main goal of the research project is to semi-automate the digital risk manag
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
+## State of code/Build instruction
+
+This is a repository for collaboration on a research project. The state of the code constantly change during the project. The code should not be used unless clearly marked as ready for production.
+
+Questions regarding the code can be directed at mss_r_d@mnemonic.no
+
 ## License
 
 [ISC License](LICENSE)
