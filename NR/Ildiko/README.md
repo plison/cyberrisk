@@ -10,8 +10,8 @@ Code for the detection of threat event scenario components with two approaches:
 - process_casie.py: extracts entity and relation annotations from CASIE and creates an dataset usable to train Spacy-based NER and REL models
 - test_detection.py: apply a NER model trained with CASIE annotations on any text
 - extract_threat_info.py: a demo for applying both NER and REL on a document
-- rel_model.py: for relation extraction, borrowed from [ExplosionAI](https://github.com/explosion/projects/tree/v3/tutorials/rel_component) 
-- rel_pipe.py: for relation extraction, borrowed from [ExplosionAI](https://github.com/explosion/projects/tree/v3/tutorials/rel_component)
+- rel_model.py: for relation extraction, borrowed from [ExplosionAI tutorial](https://github.com/explosion/projects/tree/v3/tutorials/rel_component) 
+- rel_pipe.py: for relation extraction, borrowed from [ExplosionAI tutorial](https://github.com/explosion/projects/tree/v3/tutorials/rel_component)
 
 ## Dependencies
 
@@ -56,6 +56,8 @@ Train a NER model on the CASIE entity annotations
 
 The trained model can also be made available upon request outside GitHub. It has a performace of F1=63.24 (some CASIE annotations were excluded from the data used for training due to overlapping span offsets incompatible with Spacy's NER. The dataset used had a total of 831 documents across the 3 splits.)
 
+The relation extraction training was done following the [ExplosionAI tutorial](https://github.com/explosion/projects/tree/v3/tutorials/rel_component)  
+
 ### NER Inference (GPU)
 
 Evaluate NER with Spacy on the CASIE test set (with the trained model assumed to be under casie_ner/output) and generate some example html visualizations with color-highlighting:
@@ -74,4 +76,4 @@ Do NER inference on a short text directly from the command line with html visual
 
 Do NER+REL inference on a short text directly from the command line 
 
-`python extract_threat_info.py -ner_path /nr/samba/user/pilan/Documents/CyberRisk/cr_code/casie_all_w_relations_mapped/output/model-best -rel_path /nr/samba/user/pilan/Documents/CyberRisk/cr_code/casie_all_w_relations_mapped/output/model-best_rel -test_data "On April 14, the company disclosed to the California attorney general that a December 2015 breach compromised more sensitive information than first thought. It also disclosed new attacks from earlier this year that exposed names, contact information, email addresses and purchase histories, although  the retailer says it repelled most of the attacks. The dual notifications mark the latest problems for the company, which disclosed in early 2014 that its payment systems were infected with malware that stole 350,000 payment card details."`
+`python extract_threat_info.py -ner_path model-best_ner -rel_path model-best_rel -test_data "On April 14, the company disclosed to the California attorney general that a December 2015 breach compromised more sensitive information than first thought. It also disclosed new attacks from earlier this year that exposed names, contact information, email addresses and purchase histories, although  the retailer says it repelled most of the attacks. The dual notifications mark the latest problems for the company, which disclosed in early 2014 that its payment systems were infected with malware that stole 350,000 payment card details."`
