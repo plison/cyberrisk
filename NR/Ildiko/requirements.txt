@@ -86,7 +86,7 @@ pybind11==2.10.4
 pycparser==2.21
 pydantic==1.10.4
 PyDispatcher==2.0.6
-Pygments==2.14.0
+Pygments==2.15.0
 pyOpenSSL==23.0.0
 pyparsing==3.0.9
 pytextrank==3.2.4
