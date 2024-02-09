@@ -15,7 +15,7 @@ colorama==0.4.6
 confection==0.0.4
 constantly==15.1.0
 contourpy==1.0.7
-cryptography==39.0.0
+cryptography==42.0.0
 cssselect==1.2.0
 cupy-cuda11x==12.1.0
 cycler==0.11.0
