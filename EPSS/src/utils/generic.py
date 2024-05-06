@@ -1,4 +1,6 @@
-def dynamic_import(module_name, class_name):
+from .config_reader import ConfigParserEPSS
+
+def dynamic_import(module_name: str, class_name: str) -> any:
     try:
         module = __import__(module_name, fromlist=[class_name])
     except ImportError:
@@ -10,12 +12,12 @@ def dynamic_import(module_name, class_name):
     return clss
 
 
-def import_dependenices(module):
+def import_dependenices(module: str) -> None:
     module2dependencies = {"ClassifierCWE": ["SentenceTransformer"],
                            "ClassifierCVSS": ["SentenceTransformer"]}
     
 
-def display_settings(mode, config):
+def display_settings(mode: str, config: ConfigParserEPSS) -> None:
     print("EPSS")
     print("------------------------------------------------------------------------------------")
     print("MODEL TYPE:\t\t".expandtabs(6) + config.model + " EPSS model")

@@ -60,7 +60,7 @@ class ConfigParserEPSS(ConfigParser):
         self["TARGET"] = {"horizon": "30"}
         self["TARGET"] = {"date": "2023/6/20"}
 
-    def process(self, x, y=None, s=None):
+    def process(self, x: bool, y: str=None, s: str=None):
         if x == "true" or x == "false":
             return self[s].getboolean(y)
         elif x.startswith("["):

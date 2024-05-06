@@ -15,7 +15,7 @@ class ClassifierHGB(EPSS):
                                                   max_depth=None,
                                                   random_state=16)
         
-    def format_data(self, features):
+    def format_data(self, features: pd.DataFrame) -> (pd.DataFrame, list):
         target = self.cast_target()
         features = pd.merge(features, target, on="cve", how="left")
         features["count"] = features["count"].fillna(0)
@@ -26,7 +26,7 @@ class ClassifierHGB(EPSS):
         X = data.drop(columns=["count"])
         return X, target
     
-    def get_cve2days(self, observations):
+    def get_cve2days(self, observations: pd.DataFrame) -> dict:
         day = self.config.date
         CVEs = list(set(observations["cve"]))
         CVEs.sort()
@@ -39,7 +39,7 @@ class ClassifierHGB(EPSS):
                 cve2days[row["cve"]] += 1
         return cve2days
 
-    def train(self, features):
+    def train(self, features: pd.DataFrame) -> None:
         raw_model_input, target = self.format_data(features)
         for module in self.modules:
             module.train(features)
@@ -47,19 +47,19 @@ class ClassifierHGB(EPSS):
         model_input = numericalise_features(raw_model_input, self.config)
         self.clf.fit(model_input, target)
     
-    def predict(self, features, evaluation=False):
+    def predict(self, features: pd.DataFrame, evaluation: bool=False) -> np.array:
         for module in self.modules:
             features = module.predict(features)
         model_input = numericalise_features(features, self.config)
         return self.clf.predict(model_input)
 
-    def predict_epss(self, features):
+    def predict_epss(self, features: pd.DataFrame) -> list:
         for module in self.modules:
             features = module.predict(features)
         model_input = numericalise_features(features, self.config)
         return [1 - x[0] for x in self.clf.predict_proba(model_input)]
 
-    def evaluate(self, features):
+    def evaluate(self, features: pd.DataFrame) -> None:
         raw_model_input, target = self.format_data(features)
         predictions = self.predict(raw_model_input)
         epss_scores = self.predict_epss(raw_model_input)
@@ -70,7 +70,7 @@ class ClassifierHGB(EPSS):
 
         
 
-    def cast_target(self):
+    def cast_target(self) -> pd.DataFrame:
         observations = read_observations(self.config.observations_filepath)
         cve2days = self.get_cve2days(observations)
         df = pd.DataFrame()

@@ -1,13 +1,15 @@
 from sklearn import svm
 import pandas as pd
 import numpy as np
+from sentence_transformers import SentenceTransformer
 
 class ClassifierCWE(object):
-    def __init__(self, lm):
+    
+    def __init__(self, lm: SentenceTransformer) -> None:
         self.lm = lm
         self.classifier = svm.SVC(kernel='linear', C=1, class_weight="balanced", random_state=17)
         
-    def train(self, nvd_features):
+    def train(self, nvd_features: pd.DataFrame) -> None:
         labelled = nvd_features[nvd_features["cwe_id"] != "NVD-CWE-noinfo"]
         if len(labelled) > 10000:
             labelled = labelled.sample(n=10000, random_state=17)
@@ -18,7 +20,7 @@ class ClassifierCWE(object):
         target = self.numericalise_target(labelled["cwe_id"])
         self.classifier.fit(embedded_descriptions, target) 
         
-    def predict(self, nvd_features):
+    def predict(self, nvd_features: pd.DataFrame) -> pd.DataFrame:
         nvd_features["cwe_id"].mask(nvd_features["cwe_id"] == "NVD-CWE-noinfo", np.nan, inplace=True)
         missing = nvd_features[nvd_features["cwe_id"].isnull()]
         if len(missing) == 0:
@@ -35,16 +37,16 @@ class ClassifierCWE(object):
         nvd_features["cwe_id"] = nvd_features["cwe_id"].fillna("NVD-CWE-noinfo")
         return nvd_features
 
-    def get_cwe2id_dict(self, nvd_features):
+    def get_cwe2id_dict(self, nvd_features: pd.DataFrame) -> dict:
         cwe_ids = [cwe for cwe in list(nvd_features["cwe_id"])]
         cwe_ids.sort()
         return {cwe: i for i, cwe in enumerate(cwe_ids)}
 
-    def get_id2cwe_dict(self, nvd_features):
+    def get_id2cwe_dict(self, nvd_features: pd.DataFrame) -> dict:
         cwe_ids = [cwe for cwe in list(nvd_features["cwe_id"])]
         cwe_ids.sort()
         return {i: cwe for i, cwe in enumerate(cwe_ids)}
 
-    def numericalise_target(self, target):
+    def numericalise_target(self, target: pd.Series) -> list:
         return [self.cwe2id[t] for t in target]
         
