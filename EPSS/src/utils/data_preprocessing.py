@@ -3,8 +3,9 @@ import numpy as np
 import os, numbers
 from .nvd_data_preprocessing import add_missing_nvd_features, read_NVD_directory, get_missing_nvd_features, get_nvd_feature_column_names, save_dataframe
 from .observation_data_preprocessing import read_observations, process_observation_data, get_observation_feature_column_names, get_missing_observation_features, add_missing_observation_features
+from .config_reader import ConfigParserEPSS
 
-def get_features(config):
+def get_features(config: ConfigParserEPSS) -> pd.DataFrame:
     nvd_features = get_nvd_features(config)
     observation_features = get_observation_features(config)
     features = pd.merge(nvd_features, observation_features, on="cve", how="left")
@@ -12,7 +13,7 @@ def get_features(config):
             features[col] = features[col].fillna(0)
     return features
 
-def get_nvd_features(config):
+def get_nvd_features(config: ConfigParserEPSS) -> pd.DataFrame:
     if config.nvd_feature_csv and os.path.exists(config.nvd_feature_csv):
         print("LOADING PRE-EXISTING NVD FEATURE DATAFRAME")
         feature_dataframe = pd.read_csv(config.nvd_feature_csv)
@@ -28,14 +29,14 @@ def get_nvd_features(config):
             save_dataframe(feature_dataframe, config.nvd_feature_csv)
     return feature_dataframe
 
-def get_feature2id_dictionary(data, feature):
+def get_feature2id_dictionary(data: pd.DataFrame, feature: pd.DataFrame) -> dict:
     unique_features = list(set(data[feature]))
     if isinstance(unique_features[0], numbers.Number):
         return None
     unique_features.sort()
     return {f: i for i, f in enumerate(unique_features)}
 
-def numericalise_features(data, config):
+def numericalise_features(data: pd.DataFrame, config: ConfigParserEPSS) -> np.array:
     columns = get_nvd_feature_column_names(config.nvd_features)
     columns += get_observation_feature_column_names(config.observation_features)
     numericalised_features = np.zeros((len(data), len(columns)))
@@ -51,7 +52,7 @@ def numericalise_features(data, config):
     return numericalised_features
 
 
-def get_observation_features(config):
+def get_observation_features(config: ConfigParserEPSS) -> pd.DataFrame:
     if config.observations_feature_csv and os.path.exists(config.observations_feature_csv):
         print("LOADING PRE-EXISTING OBSERVATIONS FEATURE DATAFRAME")
         observation_features_dataframe = pd.read_csv(config.observations_feature_csv)

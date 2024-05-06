@@ -1,14 +1,9 @@
 import pandas as pd
 import json, os, datetime, numbers, csv
 import numpy as np
+from .config_reader import ConfigParserEPSS
 
-def extract_features():
-    nvd_features = extract_features_from_NVD()
-    observation_features = extract_features_from_observations()
-    features = nvd_features + observation_features
-
-
-def get_nvd_feature_column_names(features):
+def get_nvd_feature_column_names(features: dict) -> list:
     columns = []
     for f, v in features.items():
         if not v:
@@ -21,12 +16,12 @@ def get_nvd_feature_column_names(features):
             columns.append(f)
     return columns
 
-def read_json_file(filepath):
+def read_json_file(filepath: str) -> dict:
     with open(filepath, "r") as f:
         corpus = json.load(f)
     return corpus
 
-def read_NVD_directory(config):
+def read_NVD_directory(config: ConfigParserEPSS) -> pd.DataFrame:
     df = pd.DataFrame()
     columns = ["cve"] + get_nvd_feature_column_names(config.nvd_features)
     column2list = {c: [] for c in columns}
@@ -41,7 +36,7 @@ def read_NVD_directory(config):
         df[c] = l
     return df
 
-def get_missing_nvd_features(df, config):
+def get_missing_nvd_features(df: pd.DataFrame, config: ConfigParserEPSS) -> dict|bool:
     print("Checking all selected features are present in NVD feature dataframe.")
     columns = set(df.columns)
     features = set(get_nvd_feature_column_names(config.nvd_features))
@@ -52,7 +47,7 @@ def get_missing_nvd_features(df, config):
         return False
 
     
-def add_missing_nvd_features(df, features, config):
+def add_missing_nvd_features(df: pd.DataFrame, features: dict, config: ConfigParserEPSS) -> pd.DataFrame:
     cve2features = {}
     columns = get_nvd_feature_column_names(features)
     column2list = {c: [] for c in columns}
@@ -77,13 +72,13 @@ def add_missing_nvd_features(df, features, config):
         df[c] = l
     return df
 
-def is_cve_missing(df, config):
+def is_cve_missing(df: pd.DataFrame, config: ConfigParserEPSS) -> bool:
     pass
 
-def save_dataframe(df,filepath):
+def save_dataframe(df: pd.DataFrame, filepath: str) -> None:
     df.to_csv(filepath, index=False, quoting=csv.QUOTE_NONNUMERIC)
     
-def get_age(entry, config):
+def get_age(entry: dict, config: ConfigParserEPSS) -> int:
     try:
         published_date_string = entry["publishedDate"]
     except:
@@ -97,44 +92,46 @@ def get_age(entry, config):
                                        published_date_time[1])
     return (config.date - published_date).days 
 
-def get_cvss_exploitability_score(entry, config):
+### redundant config argument so as to use list comprehension in "read_NVD_directory" and "add_missing_nvd_features"
+
+def get_cvss_exploitability_score(entry: dict, config: ConfigParserEPSS) -> float:
     if "baseMetricV3" in entry["impact"].keys():
         return entry["impact"]["baseMetricV3"]["exploitabilityScore"]
     if "baseMetricV2" in entry["impact"].keys():
         return entry["impact"]["baseMetricV2"]["exploitabilityScore"]
     else:
-        return -99
+        return -99.
 
-def get_cvss_impact_score(entry, config):
+def get_cvss_impact_score(entry: dict, config: ConfigParserEPSS) -> float:
     if "baseMetricV3" in entry["impact"].keys():
         return entry["impact"]["baseMetricV3"]["impactScore"]
     if "baseMetricV2" in entry["impact"].keys():
         return entry["impact"]["baseMetricV2"]["impactScore"]
     else:
-        return -99
+        return -99.
     
 
-def get_cve_id(entry, config):
+def get_cve_id(entry: dict, config: ConfigParserEPSS) -> str:
     try:
         return entry["cve"]["CVE_data_meta"]["ID"]
     except:
         return "NVD-CVE-noinfo"
 
-def get_cwe_id(entry, config):
+def get_cwe_id(entry: dict, config: ConfigParserEPSS):
     try:
         return entry["cve"]["problemtype"]["problemtype_data"][0]["description"][0]["value"]
     except:
         return "NVD-CW-noinfo"
     
     
-def get_n_references(entry, config):
+def get_n_references(entry: dict, config: ConfigParserEPSS) -> int:
     try:
         return len(entry["cve"]["references"]["reference_data"])
     except:
         return 0
 
 
-def get_description(entry, config):
+def get_description(entry: dict, config: ConfigParserEPSS) -> str:
     try:
         return entry["cve"]["description"]["description_data"][0]["value"]
     except:

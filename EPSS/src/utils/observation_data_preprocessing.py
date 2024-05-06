@@ -1,8 +1,9 @@
 import pandas as pd
 import datetime
 import numpy as np
+from .config_reader import ConfigParserEPSS
 
-def add_formatted_dates(observations):
+def add_formatted_dates(observations: pd.DataFrame) -> pd.DataFrame:
     formatted_dates = []
     for i, row in observations.iterrows():
         date_items = [int(c) for c in row["date"].split("-")]
@@ -13,12 +14,12 @@ def add_formatted_dates(observations):
     observations["formatted_date"] = formatted_dates
     return observations
 
-def read_observations(filepath):
+def read_observations(filepath: str) -> pd.DataFrame:
     df = pd.read_csv(filepath)
     df = add_formatted_dates(df)
     return df
 
-def get_missing_observation_features(df, config):
+def get_missing_observation_features(df: pd.DataFrame, config: ConfigParserEPSS) -> dict|bool:
     print("Checking all selected features are present in observations feature dataframe.")
     columns = set(df.columns)
     features = set(get_observation_feature_column_names(config.observation_features))
@@ -28,7 +29,7 @@ def get_missing_observation_features(df, config):
     else:
         return False
 
-def convert_missing_column_back_to_formated_feature(missing, config):
+def convert_missing_column_back_to_formated_feature(missing: list, config: ConfigParserEPSS) -> dict:
     ### need to reformat missing values into expect format
     formatted_missing = {}
     for m in missing:
@@ -44,7 +45,7 @@ def convert_missing_column_back_to_formated_feature(missing, config):
                     formatted_missing[m] = True
     return formatted_missing
 
-def get_observation_feature_column_names(features):
+def get_observation_feature_column_names(features: dict) -> list:
     columns = []
     for feature, val in features.items():
         if not val:
@@ -56,9 +57,8 @@ def get_observation_feature_column_names(features):
             columns.append(feature)
     return columns
 
-def add_missing_observation_features(df, features, config):
+def add_missing_observation_features(df: pd.DataFrame, features: dict, config: ConfigParserEPSS) -> pd.DataFrame:
     cve2features = {}
-    #config.observations_filepath = config.nvd_filepath
     columns = get_observation_feature_column_names(features)
     column2list = {c: [] for c in columns}
     print(config.observations_filepath)
@@ -75,21 +75,9 @@ def add_missing_observation_features(df, features, config):
     for c, l in column2list.items():
         df2[c] = l
     df = pd.merge(df, df2, on="cve", how="left")
-    ''' 
-        cve = row["cve"]
-            cve2features[cve] = {}
-            for c in columns:
-                cve2features[cve][c] = FEATURE2FUNCTION[c](entry, config)
-    ## ensure correct values attributed to correct CVE entry
-    for i, r in df.iterrows():
-        for c in columns:
-            column2list[c].append(cve2features[r["cve"]][c])
-    for c, l in column2list.items():
-        df[c] = l
-    '''
     return df
 
-def process_observation_data(config):
+def process_observation_data(config: ConfigParserEPSS) -> pd.DataFrame:
     df = pd.DataFrame()
     date = config.date
     observations = read_observations(config.observations_filepath)
@@ -106,7 +94,7 @@ def process_observation_data(config):
         df[c] = l
     return df
     
-def get_column2function(features):
+def get_column2function(features: dict) -> dict:
     c2f = {}
     for feature, val in features.items():
         print(feature, val)
@@ -118,7 +106,7 @@ def get_column2function(features):
                                              v)
     return c2f
 
-def get_mean_count(observations, cve, period, date):
+def get_mean_count(observations: pd.DataFrame, cve: str, period: int, date: datetime.datetime) -> float:
     df = observations[observations["cve"]==cve]
     counts = np.zeros(period)
     i = 0
