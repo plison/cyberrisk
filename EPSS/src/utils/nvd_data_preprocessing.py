@@ -140,10 +140,89 @@ def get_description(entry: dict, config: ConfigParserEPSS) -> str:
 
 
 
-FEATURE2FUNCTION = {"cve":  get_cve_id,
-                    "age":  get_age,
-                    "cwe_id":  get_cwe_id,
-                    "cvss_elements_exploitability_score": get_cvss_exploitability_score,
-                    "cvss_elements_impact_score": get_cvss_impact_score,
-                    "n_references": get_n_references,
-                    "description": get_description}
+def get_cve_vector(entry, config):
+    try:
+        return entry["impact"]["baseMetricV3"]["cvssV3"]["vectorString"]
+    except KeyError:
+        return "NVD-CVE-vector-noinfo"
+
+def count_tag_entries(entry, config, tag_name):
+    references = entry.get("cve", {}).get("references", {}).get("reference_data", [])
+    return sum(tag_name in reference.get("tags", []) for reference in references)
+
+def count_exploit_entries(entry, config):
+    return count_tag_entries(entry, config, "Exploit")
+
+def count_issue_tracking_entries(entry, config):
+    return count_tag_entries(entry, config, "Issue Tracking")
+
+def count_mailing_list_entries(entry, config):
+    return count_tag_entries(entry, config, "Mailing List")
+
+def count_mitigation_entries(entry, config):
+    return count_tag_entries(entry, config, "Mitigation")
+
+def count_not_applicable_entries(entry, config):
+    return count_tag_entries(entry, config, "Not Applicable")
+
+def count_patch_entries(entry, config):
+    return count_tag_entries(entry, config, "Patch")
+
+def count_permissions_required_entries(entry, config):
+    return count_tag_entries(entry, config, "Permissions Required")
+
+def count_press_media_coverage_entries(entry, config):
+    return count_tag_entries(entry, config, "Press/Media Coverage")
+
+def count_product_entries(entry, config):
+    return count_tag_entries(entry, config, "Product")
+
+def count_release_notes_entries(entry, config):
+    return count_tag_entries(entry, config, "Release Notes")
+
+def count_technical_description_entries(entry, config):
+    return count_tag_entries(entry, config, "Technical Description")
+
+def count_third_party_advisory_entries(entry, config):
+    return count_tag_entries(entry, config, "Third Party Advisory")
+
+def count_url_repurposed_entries(entry, config):
+    return count_tag_entries(entry, config, "URL Repurposed")
+
+def count_us_government_resource_entries(entry, config):
+    return count_tag_entries(entry, config, "US Government Resource")
+
+def count_vdb_entry_entries(entry, config):
+    return count_tag_entries(entry, config, "VDB Entry")
+
+def count_vendor_advisory_entries(entry, config):
+    return count_tag_entries(entry, config, "Vendor Advisory")
+
+
+
+FEATURE2FUNCTION = {
+    "cve": get_cve_id,
+    "age": get_age,
+    "cwe_id": get_cwe_id,
+    "cvss_elements_exploitability_score": get_cvss_exploitability_score,
+    "cvss_elements_impact_score": get_cvss_impact_score,
+    "n_references": get_n_references,
+    "description": get_description,
+    "cve_vector": get_cve_vector,
+    "exploit": count_exploit_entries,
+    "issue_tracking": count_issue_tracking_entries,
+    "mailing_list": count_mailing_list_entries,
+    "mitigation": count_mitigation_entries,
+    "not_applicable": count_not_applicable_entries,
+    "patch": count_patch_entries,
+    "permissions_required": count_permissions_required_entries,
+    "press_media_coverage": count_press_media_coverage_entries,
+    "product": count_product_entries,
+    "release_notes": count_release_notes_entries,
+    "technical_description": count_technical_description_entries,
+    "third_party_advisory": count_third_party_advisory_entries,
+    "url_repurposed": count_url_repurposed_entries,
+    "us_government_resource": count_us_government_resource_entries,
+    "vdb_entry": count_vdb_entry_entries,
+    "vendor_advisory": count_vendor_advisory_entries
+}
