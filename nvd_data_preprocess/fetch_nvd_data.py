@@ -38,16 +38,6 @@ def extract_zipfile(zip_filepath, nvd_filepath) -> None:
         print(f"Error extracting the file: {e}")
 
 
-def load_json_data(json_filepath):
-    try:
-        with open(json_filepath, "r") as f:
-            data = json.load(f)
-        return data
-    except Exception as e:
-        print(f"Error loading JSON data: {e}")
-        return None
-
-
 def download_and_process_cve_data(nvd_filepath: Path):
     nvd_filepath.mkdir(parents=True, exist_ok=True)
 
@@ -55,6 +45,7 @@ def download_and_process_cve_data(nvd_filepath: Path):
         zip_filepath = download_zipfile(year, nvd_filepath)
         if zip_filepath:
             extract_zipfile(zip_filepath, nvd_filepath)
+
 
 if __name__ == "__main__":
     NVD_FILEPATH = Path(__file__).parent.parent.resolve() / "cve_corpus"

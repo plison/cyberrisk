@@ -1,12 +1,9 @@
-import os
 from pathlib import Path
 import json
 from typing import List
 
-import torch
 import pandas as pd
-from torch.utils.data import Dataset, DataLoader
-from sklearn.model_selection import train_test_split
+
 
 def load_json_data(json_filepath):
     try:
@@ -16,6 +13,7 @@ def load_json_data(json_filepath):
     except Exception as e:
         print(f"Error loading JSON data: {e}")
         return None
+
 
 def extract_training_set(data_dir, nvd_filepath):
     CVSS_DIR = data_dir / "cvss"
