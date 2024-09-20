@@ -64,7 +64,7 @@ ml-dtypes==0.1.0
 murmurhash==1.0.9
 mwparserfromhell==0.6.4
 networkx==3.0
-nltk==3.8.1
+nltk==3.9
 numpy==1.23.5
 nvidia-cublas-cu11==11.10.3.66
 nvidia-cuda-nvrtc-cu11==11.7.99
