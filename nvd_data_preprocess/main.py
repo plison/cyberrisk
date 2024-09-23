@@ -59,8 +59,6 @@ def main():
         )
         df.to_csv(save_filepath, index=False)
         print(f"Data has been processed and saved to '{save_filepath}'")
-    elif args.mode == "feature_generation":
-        feature_generation()
     else:
         raise ValueError(f"Invalid mode: {args.mode}")
 
