@@ -69,10 +69,12 @@ def load_multioutput_model(
 
 def load_multilabel_model(
     model_path,
-    num_labels: int = 419,
+    num_labels: int = 422,
     model_name: str = "distilbert-base-uncased",
 ):
-    config = DistilBertConfig.from_pretrained(model_name, num_labels=num_labels, local_files_only=True)
+    config = DistilBertConfig.from_pretrained(
+        model_name, num_labels=num_labels, local_files_only=True
+    )
     model = DistilBertForMultilabelClassification(config)
     state_dict = torch.load(model_path, weights_only=True, map_location=DEVICE)
     model.load_state_dict(state_dict)
@@ -191,7 +193,6 @@ def process_nvd_json(
 
     nvd_data = load_json_data(input_file)
 
-
     for cve_item in nvd_data.get("CVE_Items", []):
         description = extract_description(cve_item)
 
@@ -254,7 +255,6 @@ def process_multiple_nvd_jsons(
             )
         except Exception as e:
             print(f"Error processing {json_file}: {str(e)}")
-        break
 
 
 def predict_cwe_and_cvss_for_nvd_data(model_name: str = "distilbert-base-uncased"):
