@@ -266,7 +266,9 @@ def predict_cwe_and_cvss_for_nvd_data(model_name: str = "distilbert-base-uncased
         model_name, clean_up_tokenization_spaces=True
     )
     cvss_model = load_multioutput_model(CVSS_BEST_PATH, model_name=model_name)
-    cwe_model = load_multilabel_model(CWE_BEST_PATH, model_name=model_name)
+    cwe_model = load_multilabel_model(
+        CWE_BEST_PATH, model_name=model_name, num_labels=len(cwe_label_encoder)
+    )
 
     process_multiple_nvd_jsons(
         INPUT_PATH,
