@@ -8,6 +8,7 @@ import torch.nn as nn
 from torch.optim import AdamW
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from torch.utils.data import Dataset, DataLoader
 from transformers import (
     DistilBertForSequenceClassification,
@@ -262,6 +263,56 @@ def train_model(model, train_loader, val_loader, patience=3):
     return model
 
 
+def evaluate(model, loader, label_encoder, device):
+    model.eval()
+    with torch.set_grad_enabled(False):
+        training_results = score_multioutput_model(model, loader, label_encoder, device)
+        print("Test performance:")
+        for classifier_id, metrics in training_results.items():
+            print(f"{classifier_id} - ", end="\n")
+            for metric_name, metric_value in metrics.items():
+                print(f"{metric_name}: {metric_value:.2f}%")
+            print("\n")
+
+
+def score_multioutput_model(model, data_loader, label_encoder, device):
+    classifier_names = list(label_encoder.keys())
+    all_predictions = [[] for _ in classifier_names]
+    all_labels = [[] for _ in classifier_names]
+
+    with torch.no_grad():
+        for batch in data_loader:
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = [label.to(device) for label in batch["labels"]]
+
+            outputs = model(input_ids, attention_mask=attention_mask)
+            logits = outputs["logits"]
+
+            for idx, logit in enumerate(logits):
+                predictions = (
+                    torch.argmax(torch.softmax(logit, dim=-1), dim=-1).cpu().numpy()
+                )
+                all_predictions[idx].extend(predictions)
+                all_labels[idx].extend(labels[idx].cpu().numpy())
+
+    results = {}
+    for i, (preds, lbls) in enumerate(zip(all_predictions, all_labels)):
+        accuracy = accuracy_score(lbls, preds)
+        precision = precision_score(lbls, preds, average="macro")
+        recall = recall_score(lbls, preds, average="macro")
+        f1 = f1_score(lbls, preds, average="macro")
+
+        results[classifier_names[i]] = {
+            "Accuracy": accuracy,
+            "Precision": precision,
+            "Recall": recall,
+            "F1-Score": f1,
+        }
+
+    return results
+
+
 def initialize_model(
     num_labels: List[int], model_name: str = "distilbert-base-uncased"
 ):
@@ -271,10 +322,26 @@ def initialize_model(
     return model
 
 
+def load_multioutput_model(
+    model_path,
+    num_labels: List[int] = [4, 2, 3, 2, 2, 3, 3, 3],
+    model_name: str = "distilbert-base-uncased",
+):
+    config = DistilBertConfig.from_pretrained(model_name, local_files_only=True)
+    model = MultiOutputDistilBert(config, num_labels_list=num_labels)
+    state_dict = torch.load(model_path, weights_only=True, map_location=DEVICE)
+    model.load_state_dict(state_dict)
+    model.to(DEVICE)
+    model.eval()
+    return model
+
+
 def train_cvss_model():
     print(f"Using device: {DEVICE}")
     tokenizer = DistilBertTokenizer.from_pretrained(
-        "distilbert-base-uncased", clean_up_tokenization_spaces=True, local_files_only=True
+        "distilbert-base-uncased",
+        clean_up_tokenization_spaces=True,
+        local_files_only=True,
     )
     train_loader, val_loader, test_loader, label_encoders = initialize_dataloaders(
         tokenizer
@@ -283,6 +350,9 @@ def train_cvss_model():
     model = initialize_model(num_labels)
     _ = train_model(model, train_loader, val_loader)
     save_label_encoders(label_encoders)
+    model_save_path = MODELS_PATH / "cvss_best_model.pth"
+    model = load_multioutput_model(model_save_path)
+    evaluate(model, test_loader, label_encoders, DEVICE)
 
 
 if __name__ == "__main__":
