@@ -6,12 +6,13 @@ from transformers import TrainingArguments, Trainer
 from safetensors.torch import load_file
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error, mean_squared_error, r2_score, accuracy_score
 import torch
-from datasets import Dataset, load_dataset, DatasetDict
+from datasets import Dataset, load_dataset, DatasetDict, concatenate_datasets, Value
 import pandas as pd
 import math
 import argparse
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
 import matplotlib.pyplot as plt
+import json
 
 BASE_MODEL = "bert-base-cased"
 LEARNING_RATE = 2e-5
@@ -31,20 +32,25 @@ def split_data(dataset, stratif_col, test_size_prop=0.3, val_prop=0.66):
     Returns:
         a DatasetDict with the three splits. 
     """
-    # Casts the relevant column as ClassLabel to be able to use it for stratified splitting
-    dataset = dataset.class_encode_column(stratif_col)
-
     # Divide all into 2 sets: train and test+validation
     train_testvalid = dataset['train'].train_test_split(test_size=test_size_prop, seed=123, stratify_by_column=stratif_col)
     
-    # Redivide test+validation into separate test and validation sets
-    test_valid_split = train_testvalid['test'].train_test_split(test_size=0.66, seed=123, stratify_by_column=stratif_col)
-    
-    # Gather all in a single DatasetDict
-    split_ds = DatasetDict({
-        'train': train_testvalid['train'],
-        'test': test_valid_split['test'],
-        'validation': test_valid_split['train']})
+    if val_prop:
+        # Redivide test+validation into separate test and validation sets
+        test_valid_split = train_testvalid['test'].train_test_split(test_size=0.66, seed=123, stratify_by_column=stratif_col)
+        
+        # Gather all in a single DatasetDict
+        split_ds = DatasetDict({
+            'train': train_testvalid['train'],
+            'test': test_valid_split['test'],
+            'validation': test_valid_split['train']})
+
+    else:
+        # Return 2 splits and a placeholder for a test set to be filled in later 
+        split_ds = DatasetDict({
+            'train': train_testvalid['train'],
+            'test': None,
+            'validation': train_testvalid['test']})
 
     print("Dataset information (with original columns)")
     print(split_ds)
@@ -54,7 +60,7 @@ def split_data(dataset, stratif_col, test_size_prop=0.3, val_prop=0.66):
 
 def preprocess(examples):
     "Preprocess texts with tokenizer and truncate."
-    label = examples["llm_score"] 
+    label = examples["score"] 
     # Tokenize (will add new columns with input ids etc) 
     # Truncate based on model's limit + pad to max doc length in batch   
     examples = tokenizer(examples["text"], truncation=True, padding="max_length", max_length=512) 
@@ -82,6 +88,7 @@ def compute_metrics_for_regression(eval_pred):
     
     return {"rmse": rmse, "mse": mse, "mae": mae, "r2": r2, "accuracy": accuracy}
 
+# not really neeeded here, but useful if one also wants to predict multiple continuous values at the same time (e.g. x,y coordinates). 
 class RegressionTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         """ Overrides the default compute_loss method of the Trainer class. 
@@ -243,7 +250,7 @@ if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser()
     argparser.add_argument("-d", "--data_path", type=str,
-                           help="Path to dataset with a selected subset of SCIO docs.", default="scio_ta_ds_llm_ann_v2.json")
+                           help="Path to dataset with a selected subset of SCIO docs.", default="scio_ta_ds_ann_20241104.json") #scio_ta_ds_llm_ann_v2
     argparser.add_argument("-m", "--model_dir", type=str,
                            help="Directory of model to train or path to 'model.safetensors' file to load.", required=True)
     argparser.add_argument("-a", "--action", type=str, 
@@ -254,28 +261,81 @@ if __name__ == "__main__":
                            default="cuda:0")
     argparser.add_argument("-s", "--score_col", type=str, 
                            help="The name of the data column containing the annotated score.", 
-                           default="llm_score")
+                           default="score")
+    argparser.add_argument("-t", "--test_data", type=str, 
+                           help="For self-training: The type of test data to use, 'manual' for manually labeled or 'llm' for data without manual labels.", 
+                           default="manual")
+    argparser.add_argument("-ad", "--additional_data", type=str, 
+                           help="For self-training: Path to JSON with additional (training) data to merge with the other data file provided.", 
+                           default=None) 
+    argparser.add_argument("-pf", "--pred_file", type=str, 
+                           help="JSON filename where to save the predictions.", 
+                           default="preds.json")
     args = argparser.parse_args()
 
     # Load tokenizer and model
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
     model = AutoModelForSequenceClassification.from_pretrained(BASE_MODEL, num_labels=1)
 
-    # Load and split data
+    # Load data, standardize score column and encode it
     unsplit_ds = load_dataset("json", data_files=args.data_path)
-    if 'manual' in args.data_path:
-        test_dataset = unsplit_ds['train']
-        test_dataset = test_dataset.map(map_scores)
-    else:        
-        split_ds = split_data(unsplit_ds, args.score_col)
-        test_dataset = split_ds['test']
+    try:
+        unsplit_ds = unsplit_ds.rename_column("llm_score", "score")
+    except ValueError:
+        pass
+    unsplit_ds = unsplit_ds.class_encode_column(args.score_col)
+
+    # Re-train llm model excluding the manual test set used for evaluating all other models
+    if args.action in ['rtep', 'rp']:
+        # Extract filenames from the test set of the manual data
+        manual_data = load_dataset("json", data_files=args.additional_data) 
+        manual_data = manual_data.filter(lambda x: x["labeler"] != "llm")
+        split_ds = split_data(manual_data, args.score_col)
+        test_filenames = set(split_ds["test"]["filename"])
+        val_filenames = set(split_ds["validation"]["filename"])
+        test_val_filenames = test_filenames.union(val_filenames)
+        test_dataset = split_ds["test"]
+
+        # Filter the llm training set to keep rows where "filename" is in not test_filenames
+        unsplit_ds["train"] = unsplit_ds["train"].filter(lambda example: example["filename"] not in test_val_filenames) 
+
+        # Use the LLM annotated data for training and the manual data for validation and testing        
+        split_ds['train'] = unsplit_ds["train"]
         
+    else:
+        # Filter instances based on label source
+        if args.test_data == 'llm':
+            # Create a test set with all the llm labeled data in one split
+            # For auto annotating training data with BERT (to be used for self-training later) 
+            unsplit_ds = unsplit_ds.filter(lambda x: x["labeler"] == "llm")
+            test_dataset = unsplit_ds["train"]
+        else:
+            # Keep only human-labeled 
+            unsplit_ds = unsplit_ds.filter(lambda x: x["labeler"] != "llm")
+
+            # For using only one data source (LLM annotated data only or manual data only)
+            split_ds = split_data(unsplit_ds, args.score_col)
+
+            # Concatenate additional data (if any) to current training data for the self-training setup 
+            if args.additional_data:
+                split_ds["train"] = split_ds["train"].remove_columns(["terms"])
+                bert_ds = load_dataset("json", data_files=args.additional_data)
+                bert_ds = bert_ds.class_encode_column("score")
+                bert_ds["train"] = bert_ds["train"].remove_columns(["terms"])
+                split_ds["train"] = concatenate_datasets([split_ds["train"], bert_ds["train"]])
+            
+            test_dataset = split_ds['test']
+
     # Train
     if 't' in args.action:
 
         # Preprocess data (SCIO dataset)
         for split in split_ds:
-            split_ds[split] = split_ds[split].map(preprocess, remove_columns=["filename", "title", "date", "lang", "terms", "main_TAs", "llm_score", "text"])
+            try: 
+                split_ds[split] = split_ds[split].map(preprocess, remove_columns=["filename", "title", "date", "lang", "terms", "score", "text", "split"])
+                                                                                    
+            except:
+                split_ds[split] = split_ds[split].map(preprocess, remove_columns=["filename", "title", "date", "lang", "score", "text", "labeler", "split"])
 
         print("Dataset information (with updated columns after preprocessing)")
         print(split_ds)
@@ -291,27 +351,52 @@ if __name__ == "__main__":
             trainer.eval_dataset=split_ds["test"]
             print(trainer.evaluate())
         if 'p' in args.action:
-            predictions = trainer.predict(split_ds["test"]) # predicted labels in 'label_ids' attrib, results in 'metrics'
-            # TODO: do something with output?
+            predictions = trainer.predict(test_dataset) # predicted labels in 'label_ids' attrib, results in 'metrics'
 
     # Predict
     if 'p' in args.action:
-
+    
         # Load model from disk
         if 't' not in args.action:
             model = load_model(args.model_dir, args.gpu)
-            
+
+        # Get metrics    
         y_preds, metrics = predict_w_model(model, test_dataset, score_col=args.score_col)
         for metric, result in metrics.items():
             print(metric, "\t", result)
 
-        # Analyze misclassifications        
+        # Get predicted scores               
         pd.set_option('display.max_rows', 20)
         df = pd.DataFrame([test_dataset["text"], test_dataset[args.score_col], y_preds], ["Text", "Score", "Prediction"]).T
         df["Rounded Prediction"] = df["Prediction"].apply(round)
+        
+        # Increment predicted score with 1 to match human annotation labels when saving data (encoding casts 1,2,3 to 0,1,2)
+        pred_scores = [v+1 for v in df["Rounded Prediction"].to_list()]
+         
+        assert sorted(set(df["Score"].to_list())) == sorted(set(df["Rounded Prediction"].to_list()))
+
+        # Analyze misclassifications 
         incorrect_cases = df[df["Score"] != df["Rounded Prediction"]]
         print(incorrect_cases)
         print("Acc trad", accuracy_score(df["Score"].to_list(), df["Rounded Prediction"].to_list()))
-        
+        print(classification_report(df["Score"].to_list(), df["Rounded Prediction"].to_list()))
+
+        # Save predictions
+        if args.test_data == 'llm':    
+            test_dataset = test_dataset.map(lambda x: {"labeler": "bert_ft"})
+            # Remove old score column and replace with the newly predicted scores
+            test_dataset = test_dataset.remove_columns(["score"])
+            test_dataset = test_dataset.add_column("score", pred_scores)
+        else:
+            # Save the test split with predictions and remove some metadata (misleading or incorrectly tranformed during loading)
+            test_dataset = test_dataset.remove_columns(["terms"])
+            test_dataset = test_dataset.remove_columns(["date"])
+            test_dataset = test_dataset.remove_columns(["split"])
+            test_dataset = test_dataset.remove_columns(["labeler"])
+            test_dataset = test_dataset.add_column("predictions", pred_scores)
+        test_dataset.to_json(args.pred_file, lines=False, indent=4)
+
         # Plot confusion matrix
-        plot_confusion_matrix(df["Score"].tolist(), df["Rounded Prediction"].tolist(), ["Not relevant", "Somewhat relevant", "Very relevant"])
+        plot_confusion_matrix(df["Score"].tolist(), df["Rounded Prediction"].to_list(), ["Not relevant", "Somewhat relevant", "Very relevant"])
+
+
