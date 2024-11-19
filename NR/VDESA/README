@@ -1,0 +1,54 @@
+Expected data format:
+
+For training:
+label: description \n
+label: description \n
+osv
+See data/vdesa-train.txt
+
+Same for evaluation. See data/vdesa-test.txt
+
+For predicting:
+description \n
+description \n
+osv
+See data/raw_descriptions.txt
+
+To train model:
+
+python analyzer.py --mode train \\
+       		   --corpus_filepath data/vdesa-train.txt \\
+		   --model_filepath vdesa.model
+
+To evaluate model:
+
+python analyzer.py --mode eval \\
+       		   --corpus_filepath data/vdesa-test.txt \\
+		   --model_filepath vdesa.model
+
+To make predictions on raw descriptions:
+
+python analyzer.py --mode predict \\
+       		   --corpus_filepath data/raw_descriptions.txt \\
+		   --model_filepath vdesa.model \\
+		   --output_filepath data/predicted.txt
+
+
+
+
+
+
+Split data into:
+578 training (dev split underhood)
+145 test
+
+Performance and stats for test data:
+
+f1(weighted): 0.8289194927207024
+
+f1 per class:
+[0.78481013 0.53333333 0.8877551 ]
+{0: 'exploited', 1: 'not_exploited', 2: 'unknown'}
+
+class distribution:
+Counter({'unknown': 89, 'exploited': 45, 'not_exploited': 11})
