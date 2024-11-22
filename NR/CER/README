@@ -1,0 +1,40 @@
+For training:
+
+First need to convert the CASIE data into a format that the auld model expects which is a sort of tabular format. This isn't specific to CASIE, as in any document with entities labelled could be used. But the scripts here work on the format found in the reformatted version.
+
+python convert2tabular.py CASIE_relabeled_v2.json
+
+Although this has already been run with the output found in casie-cer:
+
+casie-cer-dev.conllu
+casie-cer-test.conllu
+casie-cer-train.conllu
+
+Then to train the model:
+
+python run.py train --ftrain casie-cer/casie-cer-train.conllu \\
+       	      	    --fdev casie-cer/casie-cer-dev.conllu \\
+		    --model casie-cer.model \\
+		    --vocab casie-cer.vocab \\
+		    --n_lstm_nodes 400 \\
+		    --n_lstm_layers 3 \\
+		    --device -1
+
+Then to evaluate it you need to get a predicted output:
+
+python run.py predict --fdata casie-cer/casie-cer-test.conllu \\
+       	      	      --model casie-cer.model \\
+		      --vocab casie-cer.vocab \\
+		      --device -1 \\
+		      -fpred casie-cer-pred.conllu
+
+
+python eval.py casie-cer/casie-cer-test.conllu casie-cer-pred.conllu
+
+To then run the trained model on a given document to obtain a file with the entities found in that document, run the following script:
+
+./predict_raw.sh casie-cer/sample_raw_doc.txt casie-cer/sample_raw_entities.txt
+
+An example output for this doc is shown in casie-cer/sample_raw_entities.txt
+
+

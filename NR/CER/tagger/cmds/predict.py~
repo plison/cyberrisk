@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+
+from tagger import Tagger, Model
+from tagger.utils import Corpus
+from tagger.utils import reintroduce
+from tagger.utils.data import TextDataset, batchify
+import time
+import torch
+import tempfile
+
+class Predict(object):
+
+    def add_subparser(self, name, parser):
+        subparser = parser.add_parser(
+            name, help='Use a trained model to make predictions.'
+        )
+        subparser.add_argument('--batch-size', default=5000, type=int,
+                               help='batch size')
+        subparser.add_argument('--fdata', default='data/ptb/test.conllx',
+                               help='path to dataset')
+        subparser.add_argument('--fpred', default='pred.conllx',
+                               help='path to predicted result')
+
+        return subparser
+
+    def __call__(self, config):
+        time_t0 = time.time()
+        print("Load the model")
+        vocab = torch.load(config.vocab)
+        parser = Tagger.load(config.model)
+        model = Model(vocab, parser)
+        char_lemma = parser.config.char_lemma
+        print("char_lemma", char_lemma)
+        print("Load the dataset")
+        start_time = time.time()
+        corpus = Corpus.load(config.fdata)
+        dataset = TextDataset(vocab.numericalize(corpus, training=False,
+                                                 char_lemma=char_lemma))
+        # set the data loader
+        
+        loader = batchify(dataset, config.batch_size)
+
+        print("Make predictions on the dataset")
+        start_parse_time = time.time()
+        corpus.tags = model.predict(loader)
+        parse_time = time.time() - start_parse_time        
+        
+        print(f"Save the predicted result to {config.fpred}")
+        #tmp = tempfile.NamedTemporaryFile(delete=False)
+        corpus.save(config.fpred) #tmp.name)
+        ### for reintroducing 1-2 and 1.5 entries for evaluation
+        #reintroduce(config.fdata, tmp.name, config.fpred)
+        time_total = time.time() - time_t0
+        
+        print("TIMES", str(time_total) + "," + str(parse_time))
+        #speed = float(len(corpus.heads)) /timeTotal
+        #print("Speed: " + str(speed) + " sent/s")
