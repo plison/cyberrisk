@@ -1,0 +1,42 @@
+Entity-level Exploit-status Likelihood Analyzer (EELA)
+
+
+The CASIE data used for the CER model has been annotated further to add exploit status tags to CVE mentions. The model ends up giving entity-level analysis (i.e. a unique predictions for a given CVE in a document even if it is mentioned more than once). Also included is a script to add the document text to the predictions for ease of manual validation.
+
+First step is to convert the CASE json into a format that the tagger expects (artifact from original use for syntactic analysis). This format is a 10 columan tabular format with each row corresponding to a token (x.conllu naming method). In this setup the documents are not sentence segmented because the wider context is often needed in order to evaluate the exploit status of a CVE.
+
+python convert-training.py CASIE_exploit_status_annotated.json
+
+Creates a training, dev, and test file. Output from running this can be found in "eela-data".
+
+There is also a janky script to convert the data into the tabular format with the curtailed class labels (unlikely, clear, could_be).
+
+python convert-simplified-training.py CASIE_exploit_status_annotated.json
+
+Output from running this can be found in "eela-data-simplified".
+
+Then to train the mode (using the simplified class space):
+
+python tagger/run.py train --config tagger/configi.ini \
+       		     	   --ftrain eela-data-simplified/casie-eela-train.conllu  \
+			   --fdev eela-data-simplified/casie-eela-dev.conllu  \
+			   --model eela-simp.model \
+			   --vocab eela-simp.vocab \
+			   --n_lstm_nodes 400 \
+		    	   --n_lstm_layers 3 \
+		    	   --device -1
+
+
+Then to evaluate the model using the test data:
+
+python tagger/run.py evaluate --config tagger/configi.ini \
+       		     	      --fdata eela-data-simplified/casie-eela-test.conllu  \	
+			      --model eela-simp.model \
+			      --vocab eela-simp.vocab \
+			      --device -1
+
+And as an example how to use it on raw data. This can be a single document or many documents that are separated by "\n\n". An example of expected format is given in test.raw. Needs to be changed to allow for more complex documents perhaps. But to get predictions with and without corresponding document text run the following script:
+
+./predict.sh test.raw eela-input.conllu eela-predictions.json eela-predictions-w-text.json eela-simp.model eela-simp.vocab
+
+

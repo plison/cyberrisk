@@ -1,0 +1,67 @@
+[
+   {
+      "tagged_CVEs": {
+         "CVE-2018-0171": "unlikely_to_be_exploited",
+         "CVE-2018-0150": "unlikely_to_be_exploited",
+         "CVE-2018-0151": "unlikely_to_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2018-0296": "unlikely_to_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2018-11776": "could_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2018-7427": "unlikely_to_be_exploited",
+         "CVE-2018-7432": "unlikely_to_be_exploited",
+         "CVE-2018-7429": "unlikely_to_be_exploited",
+         "CVE-2018-7431": "unlikely_to_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2017-12934": "unlikely_to_be_exploited",
+         "CVE-2017-12933": "unlikely_to_be_exploited",
+         "CVE-2017-": "unlikely_to_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2017-3135": "could_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2018-16858": "unlikely_to_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2018-15982": "unlikely_to_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2018-15981": "unlikely_to_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2018-12376": "unlikely_to_be_exploited",
+         "CVE-2018-12377": "unlikely_to_be_exploited",
+         "CVE-2018-12378": "unlikely_to_be_exploited",
+         "CVE-2018-12375": "unlikely_to_be_exploited"
+      }
+   },
+   {
+      "tagged_CVEs": {
+         "CVE-2018-8423": "unlikely_to_be_exploited"
+      }
+   }
+]

@@ -1,0 +1,25 @@
+[Network]
+n_embed = 100
+n_tag_embed = 0
+n_feat_embed = 0
+n_char_embed = 32
+n_char_out = 100
+embed_dropout = 0.33
+lstm_dropout = 0.33
+n_mlp_arc = 512
+n_mlp_rel = 128
+mlp_dropout = 0.33
+patience = 25
+
+[Optimizer]
+lr = 2e-3
+beta_1 = 0.9
+beta_2 = 0.9
+epsilon = 1e-12
+decay = .75
+steps = 5000
+
+[Run]
+batch_size = 32
+epochs = 200
+patience = 10
