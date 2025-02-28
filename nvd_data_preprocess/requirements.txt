@@ -11,7 +11,7 @@ sentence-transformers==2.4.0
 tokenizers==0.19.1
 torch==2.2.1
 tqdm==4.66.3
-transformers==4.44.2
+transformers==4.48.0
 urllib3==2.2.2
 xgboost==2.0.3
 pyarrow==17.0.0
