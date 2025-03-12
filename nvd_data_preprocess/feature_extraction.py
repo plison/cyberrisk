@@ -2,9 +2,8 @@ import json
 from pathlib import Path
 import pandas as pd
 from typing import List, Dict, Any, Optional
-
-CORPUS_FILEPATH = Path(__file__).parent.parent.resolve() / "nvd_data_with_predictions"
-OUTPUT_FILEPATH = Path(__file__)
+from urllib.parse import urlparse
+from config import CORPUS_FILEPATH, PREPROCESSED_PATH, PREPROCESS_DIR
 
 
 def load_json_file(file_path: Path) -> Optional[Dict]:
@@ -65,7 +64,6 @@ def extract_cvss_details(cve_entry: Dict, cvss_type: str) -> Dict[str, Any]:
 
     prefix = "predicted_" if cvss_type == "predicted" else ""
     return {
-        f"{prefix}cvssv3_version": cvss.get("version"),
         f"{prefix}vector_string": cvss.get("vectorString"),
         f"{prefix}attack_vector": cvss.get("attackVector"),
         f"{prefix}attack_complexity": cvss.get("attackComplexity"),
@@ -91,10 +89,56 @@ def count_tags_in_references(cve_entry: Dict) -> Dict[str, int]:
 
     for reference in references:
         for tag in reference.get("tags", []):
+            
             ref_tag = "ref_" + tag.lower().replace(" ", "_").replace("/", "_")
             tag_counts[ref_tag] = tag_counts.get(ref_tag, 0) + 1
 
     return tag_counts
+
+
+def count_tags_and_domains_in_references(cve_entry: Dict) -> Dict[str, int]:
+    """Count occurrences of each tag and domain in references, using tags as domain prefixes."""
+    references = (
+        cve_entry.get("cve", {}).get("references", {}).get("reference_data", [])
+    )
+    counts: Dict[str, int] = {}
+
+    for reference in references:
+        tags = reference.get("tags", [])
+        for tag in tags:
+            ref_tag = "ref_" + tag.lower().replace(" ", "_").replace("/", "_")
+            counts[ref_tag] = counts.get(ref_tag, 0) + 1
+
+        # Count domains with tag prefixes
+        url = reference.get("url", "")
+        if url:
+            try:
+                domain = urlparse(url).netloc.lower()
+                if domain:
+                    domain_key = "domain_" + domain.replace(".", "_")
+                    counts[domain_key] = counts.get(domain_key, 0) + 1
+
+                    for tag in tags:
+                        tag_prefix = tag.lower().replace(" ", "_").replace("/", "_")
+                        tagged_domain_key = (
+                            f"domain_{tag_prefix}_{domain.replace('.', '_')}"
+                        )
+                        counts[tagged_domain_key] = counts.get(tagged_domain_key, 0) + 1
+            except ValueError:
+                continue
+
+    return counts
+
+
+def is_rejected_cve(cve_entry: Dict) -> bool:
+    """Check if a CVE entry is rejected."""
+    description_data = (
+        cve_entry.get("cve", {}).get("description", {}).get("description_data", [])
+    )
+    for desc in description_data:
+        if "reject" in desc.get("value", "").lower():
+            return True
+    return False
 
 
 def process_cve_entries(nvd_filepath: Path) -> List[Dict]:
@@ -107,20 +151,18 @@ def process_cve_entries(nvd_filepath: Path) -> List[Dict]:
             cve_data.extend(
                 extract_data_from_cve(cve_entry)
                 for cve_entry in corpus.get("CVE_Items", [])
+                if not is_rejected_cve(cve_entry)
             )
     return cve_data
 
 
 def main():
     """Main function to process CVE data and save to CSV."""
-    try:
-        cve_data = process_cve_entries(CORPUS_FILEPATH)
-        df = pd.DataFrame(cve_data)
-        output_file = "processed_nvd_data_with_predictions.csv"
-        df.to_csv(output_file, index=False)
-        print(f"Data has been processed and saved to '{output_file}'")
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+    cve_data = process_cve_entries(CORPUS_FILEPATH)
+    df = pd.DataFrame(cve_data)
+    PREPROCESS_DIR.mkdir(exist_ok=True)
+    df.to_csv(PREPROCESSED_PATH, index=False)
+    print(f"Data has been processed and saved to '{PREPROCESSED_PATH}'")
 
 
 if __name__ == "__main__":
