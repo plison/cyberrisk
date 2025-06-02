@@ -128,6 +128,9 @@ def generate_time_windows(
             try:
                 cve_info = cve_data.loc[cve].to_dict()
                 cve_info["cve_id"] = cve
+                if cve_info["published_date"] > end_date:
+                    print(f"Warning: CVE {cve} has publication date after window end. Skipping.")
+                    continue
             except KeyError:
                 print(f"Warning: CVE {cve} not found in cve_data. Skipping.")
                 continue
