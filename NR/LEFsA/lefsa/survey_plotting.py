@@ -753,4 +753,3 @@ def plot_prob(
             ax.legend(loc="upper left", bbox_to_anchor=(1, 1), title=hue_var)
         else:
             ax.get_legend().remove()
-            ax.get_legend().remove()

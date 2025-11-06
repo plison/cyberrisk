@@ -129,7 +129,6 @@ class KernelForecaster(BaseForecaster):
         distances = self.get_distances(test_df)
 
         for target_var in target_vars:
-
             # If the target variable has a precondition, we change the name of the
             # variable to reflect that conditional dependency
             full_target_var = str(target_var)
@@ -143,7 +142,6 @@ class KernelForecaster(BaseForecaster):
 
             # Classification via weighted voting
             if self.train_df[target_var].dtype in ["bool", "category"]:
-
                 prob_results[full_target_var] = self._weighted_voting(
                     weights, target_var
                 )
@@ -154,7 +152,6 @@ class KernelForecaster(BaseForecaster):
 
             # Regression via weighted average
             elif self.train_df[target_var].dtype in ["float64"]:
-
                 preds, intervals = self._weighted_average(weights, target_var)
                 pred_results[full_target_var], interval_results[full_target_var] = (
                     preds,
@@ -188,14 +185,12 @@ class KernelForecaster(BaseForecaster):
 
         # Classification via weighted voting
         if self.train_df[target_col].dtype in ["bool", "category"]:
-
             results["probs"] = self._weighted_voting(weights, target_col)
             results["probs"].index = test_df.index
             results["preds"] = results["probs"].idxmax(axis=1)
 
         # Regression via weighted average
         elif self.train_df[target_col].dtype in ["float64"]:
-
             results["preds"], results["intervals"] = self._weighted_average(
                 weights, target_col
             )
@@ -228,7 +223,6 @@ class KernelForecaster(BaseForecaster):
 
         # Option 2: weighted cosine distance
         elif self.distance_metric == "cosine":
-
             weighted_dot_products = get_weighted_dot_products_batch(
                 test_arr, self.train_vectors, self.feat_weights
             )
