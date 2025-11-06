@@ -7,6 +7,8 @@ We have developed two complementary approaches to generate those forecasts based
 - One statistical approach based on results from the [Mørketallsundersøkelse](https://www.nsr-org.no/publikasjoner/morketallsundersokelsen) surveys. This approach gives us a high-level overview of the expected number and types of loss events depending on the characteristics of the organization.
 - One machine learning approach based on incidents reported in the [Veris Community Database](https://verisframework.org/vcdb.html) (VCDB). This approach allows us to generate more fine-grained forecasts about the exact nature of the incident (attack vector, affected assets, impact, etc.), again based on the characteristics of the organization.
 
+To use the survey-based forecaster, you need a JSON file `morketall.json` which cannot be released publicly, but can be provided upon request.
+
 We have prepared two notebooks to explain how those two approaches operate and how to use them in practice:
 - [Walkthrough on survey-based forecasting](examples/walkthrough_survey.ipynb)
 - [Walkthrough on VCDB-based forecasting](examples/walkthrough_vcdb.ipynb)
