@@ -134,7 +134,7 @@ class OrgFeatures:
         description in natural language.
         This method requires an OpenAI API key to be set in the environment variable OPENAI_KEY."""
 
-        import llm
+        from . import llm
 
         return llm.create_survey_feats_from_description(org_description)
 
