@@ -1,0 +1,12 @@
+autogluon==1.4.0
+autogluon.tabular==1.4.0
+currencyconverter==0.18.9
+matplotlib==3.10.7
+numba==0.61.2
+numpy==2.3.4
+openai==2.7.1
+pandas==2.3.3
+pycountry_convert==0.7.2
+scikit_learn==1.7.2
+seaborn==0.13.2
+tqdm==4.67.1
