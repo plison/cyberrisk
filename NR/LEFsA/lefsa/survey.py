@@ -357,11 +357,11 @@ class SurveyBasedForecaster:
             prediction["incident_types"][value] = bootstrap_samples
 
         # We draw samples for the probability of breach/leakage and fraud incidents
-        boostrap_prob_breach_leakage = (
+        bootstrap_prob_breach_leakage = (
             bootstrap_incident_types["Datainnbrudd"]
             + bootstrap_incident_types["Datatyveri"]
         )
-        boostrap_prob_fraud = bootstrap_incident_types["Bedrageri"]
+        bootstrap_prob_fraud = bootstrap_incident_types["Bedrageri"]
 
         # We compute the CI of losses related to breaches, leakages and fraud
         # Full prob: P(loss) = P(loss |breach/leakage) * P(breach/leakage) + P(loss | fraud) * P(fraud)
@@ -374,8 +374,8 @@ class SurveyBasedForecaster:
                 "losses_fraud", value, cond_assignments
             )
             bootstrap_product = np.multiply(
-                boostrap_prob_breach_leakage, bootstrap_loss_breach_leakage
-            ) + np.multiply(boostrap_prob_fraud, bootstrap_loss_fraud)
+                bootstrap_prob_breach_leakage, bootstrap_loss_breach_leakage
+            ) + np.multiply(bootstrap_prob_fraud, bootstrap_loss_fraud)
             prediction["losses"][value] = bootstrap_product
 
         # We compute the CI of non-financial losses related to breaches and leakages
@@ -385,7 +385,7 @@ class SurveyBasedForecaster:
                 "other_losses_breach_leakage", value, cond_assignments
             )
             bootstrap_product = np.multiply(
-                boostrap_prob_breach_leakage, bootstrap_other_loss_freq
+                bootstrap_prob_breach_leakage, bootstrap_other_loss_freq
             )
             prediction["other_losses"][value] = bootstrap_product
 
@@ -512,7 +512,7 @@ class SurveyBasedForecaster:
     def _bootstrap_mixed_proportions(
         self, category: str, value: str, conditional_assignments: List[Tuple[str, str]]
     ) -> np.ndarray:
-        """Boostrap a sample of proportions for the given category and value, based on a simple
+        """bootstrap a sample of proportions for the given category and value, based on a simple
         Mixture of Experts with a fixed gating function (the weights of the experts)
         """
 
@@ -594,7 +594,7 @@ class SurveyBasedForecaster:
             np.random.binomial(base_count, proportion, nb_to_bootstrap) / base_count
         )
 
-        # If we are adjusting for trends, we boostrap possible corrections (based on the elapsed time
+        # If we are adjusting for trends, we bootstrap possible corrections (based on the elapsed time
         # since the survey was conducted), and add them to the bootstrap samples.
         if self.adjust_for_trends:
             correction_factor = self._bootstrap_correction_factor(
@@ -662,7 +662,7 @@ class SurveyBasedForecaster:
         if len(ndiffs) == 0:
             return np.zeros(nb_to_bootstrap)
 
-        # We boostrap differences by sampling with replacement
+        # We bootstrap differences by sampling with replacement
         bootstrap_diffs = np.random.choice(
             list(ndiffs.values()), size=(len(ndiffs), nb_to_bootstrap), replace=True
         )
